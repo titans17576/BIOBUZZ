@@ -1,0 +1,60 @@
+package org.firstinspires.ftc.teamcode.lib.fsm;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.IntStream;
+
+/**
+ * from 23641 Cuberobot
+ * Manages a group of states
+ * make sure to call the update method continuously
+ */
+public class StateMachine {
+    private final List<State> states;
+    private int index = 0;
+    private boolean running = false;
+
+    public StateMachine(State... states) {
+        this.states = new ArrayList<>(Arrays.asList(states));
+    }
+
+    public void start() {
+        if (!states.isEmpty()) {
+            index = 0;
+            running = true;
+            states.get(0).start();
+        }
+    }
+
+    private int getIndex(String stateName) {
+        return IntStream.range(0, states.size())
+                .filter(i -> stateName != null &&
+                        stateName.equals(states.get(i).getName()))
+                .findFirst()
+                .orElse(-1);
+    }
+
+    public void update() {
+        if (!running) return;
+
+        State current = states.get(index);
+        current.run();
+
+        if (current.isFinished()) {
+            String nextStateName = current.getNextState();
+            int nextIndex = (nextStateName != null) ? getIndex(nextStateName) : index + 1;
+
+            if (nextIndex >= 0 && nextIndex < states.size()) {
+                index = nextIndex;
+                states.get(index).start();
+            } else {
+                running = false;
+            }
+        }
+    }
+
+    public boolean isFinished() {
+        return !running;
+    }
+}
